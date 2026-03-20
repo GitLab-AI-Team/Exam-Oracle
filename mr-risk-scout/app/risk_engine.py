@@ -75,6 +75,17 @@ def analyze(changes: List[Dict[str, Any]]) -> RiskResult:
         score += 1
         reasons.append("No obvious test changes detected.")
 
+    paths = [
+    (c.get("new_path") or c.get("old_path") or "")
+    for c in changes 
+    ]
+
+    # CI configuration rule
+    if any(p == ".gitlab-ci.yml" or p.startswith(".gitlab/") for p in paths):
+        score += 2
+        reasons.append("Touches CI/CD configuration (.gitlab-ci.yml or .gitlab/). (+2)")
+        
+
     score = min(10, score)
 
 

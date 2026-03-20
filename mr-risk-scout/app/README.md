@@ -65,3 +65,60 @@ Ensures that obtaining the GitLab token is not written everywhere.
 # -----
 
 Main takeaway: main.py is the pipeline for the backend; the other classes are supporting classes that have a single responsibility to ensure changes/updates to any part of the code is only done in a single class (does not affect the rest).
+
+
+Test Case:
+
+Run on Powershell Terminal:
+
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
+
+When running the application, you will not be able to write anymore to the terminal. Open a new terminal window to run a separate powershell and paste the code below.
+Score risk will be 3 (auth = +2 points from the first line and +1 for lack of test/spec heuristic in second line)
+
+Test 1:
+
+$body = @{
+  title = "Debug: auth change"
+  changes = @(
+    @{ new_path = "auth/login.py"; diff = "+ changed auth logic`n- old line" },
+    @{ new_path = "src/service.py"; diff = "+ new behavior" }
+  )
+} | ConvertTo-Json -Depth 6
+
+# Expected score: 3
+
+Test 2:
+
+$body = @{
+  title = "Debug: CI change"
+  changes = @(
+    @{ new_path = ".gitlab-ci.yml"; diff = "+ change pipeline" }
+  )
+} | ConvertTo-Json -Depth 6
+
+Expected score: 3
+High file count + risky file
+
+Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/debug/analyze" -ContentType "application/json" -Body $body
+
+Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/debug/analyze" -ContentType "application/json" -Body $body
+
+# If you want to request the full reasons, posted as a JSON file (from reporter.py)
+
+Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/debug/analyze" -ContentType "application/json" -Body $body |
+  ConvertTo-Json -Depth 10
+
+# TO RUN
+
+Type into terminal:
+
+cd C:\Users\youre\exam-oracle\mr-risk-scout
+.\.venv\Scripts\Activate.ps1
+python -m app.main
+
+uvicorn app.main:app --reload --port 8000 # now you may start up the application
+open a new terminal specifically for powershell, since you are no longer able to type once uvicorn starts up
+
+.\.venv\Scripts\Activate.ps1
+python -m pytest -q
