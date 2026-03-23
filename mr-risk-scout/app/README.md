@@ -1,3 +1,16 @@
+# MR Risk Scout
+
+MR Risk Scout is an event-driven system that analyzes GitLab merge requests and flags potentially high-risk changes early in the development workflow.
+It uses webhook triggers, simulates or fetches diffs, and rule-based scoring to generate actionable feedback for reviewers.
+
+# How it Works
+
+The GitLab Webhook is sent to a FLASK server, which processes the payload. The system checks for change data (simulated in development or fetched via GitLab API in production), analyzing the changes using a risk engine, and generates a structured MR Risk comment.
+
+### System Flow
+
+Webhook → Flask Server → Webhook Handler → Diff Fetch (if needed) → Risk Engine → Comment Output
+
 # 1) main.py
 
 The sole purpose main is to orchestrate the request cycle. The cycle is broken down into 5 steps:
@@ -30,11 +43,11 @@ Makes changes easier
 
 Finds risk level from path (RiskResult)
 
-Scores 0-10 and sees if it the MR changes are low/medium/high risk and returns reasons why they are that risk
+Scores 0-10 and sees if the MR changes are low/medium/high risk and returns reasons why they are that risk
 
 Returns a class RiskResult(...) since returning the whole class means it is well-defined and returns exactly as intended.
 
-Why not dictionary? Dctionary/tuple makes it harder to extend/no structure guarantee.
+Why not dictionary? Dictionary/tuple makes it harder to extend/no structure guarantee.
 Typos may occur, no type guarantee, no auto-complete help.
 
 
@@ -49,76 +62,80 @@ Upserts risk comment (if one exists, update it. if not, create a new one)
 
 # 5) models.py  
 
-(Usedw in 2nd step of main.py pipeline)
+(Used in 2nd step of main.py pipeline)
 
 Pulls ONLY what we need from the GitLab webhook 
 
 Defines what we need from a MergeRequest with action as open/update/merge/close as the main ones we'll use (discards other action types in main.py)
 
-# g6) config.py 
+# 6) config.py 
 
 Makes sure obtaining GITLAB webhook secrets and configs are only done from a single class (Single Responsibility Principle). 
 
 Ensures that obtaining the GitLab token is not written everywhere.
 
+# 7) webhook_handler.py
+
+Fetches the MR Changes
+
+For webhook payloads, it will scan for changes and if there are not, check if there is a project_id and mr_iid and use GitLab Merge Request API for fetching changes instead.
+
+MR Risk Analysis comment is also defined here
+
+# 8) server.py
+
+Opens FLASK server, allowing POST requests to be sent, with defined bodies converted to JSON.
+Returns the result of the POST request
 
 # -----
 
 Main takeaway: main.py is the pipeline for the backend; the other classes are supporting classes that have a single responsibility to ensure changes/updates to any part of the code is only done in a single class (does not affect the rest).
 
+server.py opens up the FLASK server for POST requests
+webhook_handler creates the pipeline for the webhook MR Risk Analysis
 
-Test Case:
 
-Run on Powershell Terminal:
+# Running the Application
 
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
+Idea: Open up the FLASK server.
+We want to define a webhook payload, send the POST request and retrieve comments for the MR Risk output
 
-When running the application, you will not be able to write anymore to the terminal. Open a new terminal window to run a separate powershell and paste the code below.
-Score risk will be 3 (auth = +2 points from the first line and +1 for lack of test/spec heuristic in second line)
+1) Open the FLASK server.
+python server.py
 
-Test 1:
+2) Define the body
+Open a powershell terminal:
 
-$body = @{
-  title = "Debug: auth change"
-  changes = @(
-    @{ new_path = "auth/login.py"; diff = "+ changed auth logic`n- old line" },
-    @{ new_path = "src/service.py"; diff = "+ new behavior" }
-  )
-} | ConvertTo-Json -Depth 6
+ $body = @{
+    object_kind = "merge_request"
+    object_attributes = @{
+        title = "Test MR"
+    }
+    changes = @(
+        @{
+            new_path = "auth/login.py"
+            diff = "+ change"
+        }
+    )
+} | ConvertTo-Json -Depth 5
 
-# Expected score: 3
+3) Send the POST request
+Invoke-RestMethod -Method Post `
+    -Uri "http://127.0.0.1:5000/webhook" `
+    -ContentType "application/json" `
+    -Body $body
 
-Test 2:
+This should post that there is an MR Risk Analysis done
+Now you just need to find the comments
 
-$body = @{
-  title = "Debug: CI change"
-  changes = @(
-    @{ new_path = ".gitlab-ci.yml"; diff = "+ change pipeline" }
-  )
-} | ConvertTo-Json -Depth 6
+4) $response.comment
 
-Expected score: 3
-High file count + risky file
+Example Output:
 
-Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/debug/analyze" -ContentType "application/json" -Body $body
+🚨 MR Risk Analysis
 
-Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/debug/analyze" -ContentType "application/json" -Body $body
+Risk Score: 3
 
-# If you want to request the full reasons, posted as a JSON file (from reporter.py)
-
-Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/debug/analyze" -ContentType "application/json" -Body $body |
-  ConvertTo-Json -Depth 10
-
-# TO RUN
-
-Type into terminal:
-
-cd C:\Users\youre\exam-oracle\mr-risk-scout
-.\.venv\Scripts\Activate.ps1
-python -m app.main
-
-uvicorn app.main:app --reload --port 8000 # now you may start up the application
-open a new terminal specifically for powershell, since you are no longer able to type once uvicorn starts up
-
-.\.venv\Scripts\Activate.ps1
-python -m pytest -q
+Reasons:
+- Touches higher-risk areas (auth/infra/config/migrations/etc).
+- No obvious test changes detected.

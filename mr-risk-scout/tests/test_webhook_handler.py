@@ -5,15 +5,15 @@ from app.webhook_handler import handle_webhook
 
 def test_handle_webhook_basic():
     payload = {
-        "object_kind": "merge_request",
-        "object_attributes": {
-            "title": "Update auth and CI"
-        },
-        "changes": [
-            {"new_path": "auth/login.py", "diff": "+ changed auth logic"},
-            {"new_path": ".gitlab-ci.yml", "diff": "+ updated pipeline"}
-        ]
+    "object_kind": "merge_request",
+    "object_attributes": {
+        "title": "Update auth logic",
+        "iid": 42
+    },
+    "project": {
+        "id": 123
     }
+}
 
     result = handle_webhook(payload)
 
