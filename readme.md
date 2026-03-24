@@ -1,57 +1,16 @@
-# CS Exam Oracle (Hackathon)
+# MR Risk Scout (MVP)
 
-A Streamlit app that analyzes CS course materials (notes/slides/text), surfaces high-yield topics, and generates likely exam questions.
+A tiny FastAPI webhook service that listens for GitLab Merge Request events,
+computes a basic risk score from diffs, and posts/updates a single MR comment.
 
-## Architecture (Grounded Hybrid)
-- **Deterministic core (always works):** chunking + topic ranking + templated question generation
-- **Optional LLM enhancement (when API key present):** refine question wording + produce grounded answer outlines using retrieved evidence
+## Setup
 
-This keeps results stable and reproducible while still enabling a “wow” layer for demos.
+1) Create a GitLab Personal Access Token with API scope.
+2) Copy `.env.example` to `.env` and fill it out.
 
----
+## Install
 
-## Project Structure
-
----
-
-## Setup (Windows + VS Code)
-
-## In case of issues
-**Check if you are in the right folder (should show as (venv) PS C:\Users\<your-name>\exam-oracle)**
-```powershell
-pwd
-dir
-
-```
-### 0) Prereqs
-
-- Python installed (use python.org installer)
-- VS Code + Python extension
-- Everything is done in PowerShell
-
-### 1) Clone the repo and open it
-```powershell
-git clone <REPO_URL>
-cd exam-oracle
-code .
-
-```
-### 2) Create the virtual environment (project-local)
-py -3 -m venv venv
-
-### 3) Activate the venv
-.\venv\Scripts\Activate.ps1
-
-### In case PowerShell blocks activation
-Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
-
-### Use the same activation script once again
-
-### 4) Install dependencies
-python -m pip install --upgrade pip
+```bash
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-
-### 5) Run the app
-python -m streamlit run src/app.py
-
-**Open the URL shown in the terminal (it may auto-open, usually it appears as http://localhost:8501)**

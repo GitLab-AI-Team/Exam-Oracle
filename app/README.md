@@ -106,7 +106,7 @@ python server.py
 2) Define the body
 Open a powershell terminal:
 
- $body = @{
+$body = @{
     object_kind = "merge_request"
     object_attributes = @{
         title = "Test MR"
