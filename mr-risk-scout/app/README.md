@@ -119,11 +119,8 @@ Open a powershell terminal:
     )
 } | ConvertTo-Json -Depth 5
 
-3) Send the POST request
-Invoke-RestMethod -Method Post `
-    -Uri "http://127.0.0.1:5000/webhook" `
-    -ContentType "application/json" `
-    -Body $body
+3) Send the POST request to $response variable.
+$response = Invoke-RestMethod -Method Post -Uri "http://localhost:5000/webhook" -ContentType "application/json" -Body $body
 
 This should post that there is an MR Risk Analysis done
 Now you just need to find the comments
