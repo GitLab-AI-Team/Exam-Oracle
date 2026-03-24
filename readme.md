@@ -1,5 +1,7 @@
 # MR Risk Scout (MVP)
 
+Built for GitLab Duo / Hackathon Prototype
+
 A lightweight FastAPI service that analyzes GitLab Merge Requests, assigns a simple risk score based on file changes, and posts a single summary comment back to the MR.
 
 ## Features
